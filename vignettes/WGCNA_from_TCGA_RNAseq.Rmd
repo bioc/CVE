@@ -1,0 +1,273 @@
+---
+title: 'Weighted gene co-expression network analysis with TCGA RNAseq data'
+author: | 
+  | Andreas Mock
+  | Cancer Research UK Cambridge Institute, University of Cambridge
+date: '`r Sys.Date()`'
+output: BiocStyle::html_document
+fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{Weighted gene co-expression network analysis with TCGA RNAseq data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{utf8}
+---
+
+The following tutorial describes the generation of a weighted co-expression network from TCGA (The Cancer Genome Atlas) RNAseq data using the `WGCNA` *R* package by Langfelder and Horvarth[^1]. In addition, individual genes and modules will be related to sample traits. Exemplarly, a co-expression network for skin cutaneous melanomas (SKCM) will be generated. However, the following weighted gene co-expression analysis (WGCNA) framework is applicable to any TCGA tumour entity. 
+
+The code of this vignette is a proof of principial example that can't be run as listed without assembling the RNAseq data as described in the following beforehand.
+
+#Assembly and preprocessing of TCGA RNAseq data
+
+Melanoma RNAseq data for the CVE extension were downloaded as expression estimates per gene (RNAseq2 level 3 data) from the [TCGA data portal](https://tcga-data.nci.nih.gov/tcga/). Please note that the TCGA Data portal is no longer operational and all TCGA data now resides at the [Genomic Data Commons](https://gdc.nci.nih.gov).
+For WGCNA, the individual TCGA RNAseq2 level 3 files were concatenated to a matrix `RNAseq` with gene symbols as row and TCGA patient barcodes as column names.
+
+Further preprocessing included the removal of control samples (for more information see the [TCGA Wiki](https://wiki.nci.nih.gov/display/TCGA/TCGA+barcode)) and expression estimates with counts in less than 20% of cases.  
+
+```{r, eval=FALSE}
+RNAseq = RNAseq[apply(RNAseq,1,function(x) sum(x==0))<ncol(RNAseq)*0.8,]
+```
+
+To relate co-expression modules to disease phenotypes, clinical metadata is needed. As for the melanoma TCGA data, the `clinical` data was published as a curated spreadsheet in the supplements of the latest publication (suppl_table_S1D.txt)[^2].
+
+As read counts follow a negative binomial distribution, which has a mathematical theory less tractable than that of the normal distribution, RNAseq data was
+normalised with the `voom` methodology[^3]. The `voom` method estimates the mean-variance of the log-counts and generates a precision weight for each observation. This way, a comparative analysis can be performed with all bioinformatic workflows originally developed for microarray analyses.
+
+```{r, eval=FALSE}
+library(limma)
+RNAseq_voom = voom(RNAseq)$E
+```
+
+A large fraction of genes are not differentially expressed between samples. These have to be excluded from WGCNA, as two genes without notable variance in expression between patients will be highly correlated. As a heuristic cutoff, the top 5000 most variant genes have been used in most WGCNA studies. In detail the median absolute devision (MAD) was used as a robust measure of variability.
+
+```{r, eval=FALSE}
+#transpose matrix to correlate genes in the following
+WGCNA_matrix = t(RNAseq_voom[order(apply(RNAseq_voom,1,mad), decreasing = T)[1:5000],])
+```
+
+#Construction of co-expression network
+
+The connections within a network can be fully described by its *adjacency matrix* $a_{ij}$, a $N~x~N$ matrix whose component $a_{ij}$ denotes the connection strength between node $i$ and $j$. The connection strength is defined by the *co-expression similarity* $s_{ij}$. The most widely used method defines $s_{ij}$ as the absolute value of the correlation coefficient between the profiles of node $i$ and $j$: $s_{ij} = |cor(x_i,x_j)|$. However, we employed the biweight midcorrelation to define $s_{ij}$, as it is more robust to outliers[^4]. This feature is pivotal, as we do not expect genes to be co-expressed in all patients. 
+
+```{r, eval=FALSE}
+#similarity measure between gene profiles: biweight midcorrelation
+library(WGCNA)
+s = abs(bicor(WGCNA_matrix))
+```
+
+Originally, the co-expression similarity matrix was transformed into the adjacency matrix using a 'hard' threshold. In these *unweighted co-expression networks*, two genes were identified to be linked ($a_{ij} = 1$), if the absolute correlation between their expression profiles were higher than a 'hard' threshold $\tau$. However, this hard threshold does not reflect the underlying continuous co-expression measure and leads to a significant loss of information. As a consequence, Horvath and colleagues introduced a new framework for *weighted gene co-expression analysis* (WGCNA)[^5]. At its core, a weighted adjacency is defined by raising the co-expression similarity to a power ('soft' threshold):
+
+$$a_{ij} = s_{ij}^\beta$$
+
+with $\beta \geq 1$. To choose an appropriate $\beta$-value, the authors present a methodology that assesses the scale free topology of the network. For detailed rational of this approach, please see Zhang and Horvath[^5].
+
+```{r, eval=FALSE}
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+sft = pickSoftThreshold(WGCNA_matrix, powerVector = powers, verbose = 5)
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     xlab='Soft Threshold (power)',ylab='Scale Free Topology Model Fit,signed R^2',
+     type='n', main = paste('Scale independence'));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     labels=powers,cex=1,col='red'); abline(h=0.90,col='red')
+```
+
+As for the melanoma network, a beta value of 3 was the lowest power for which the scale-free topology fit index curve flattens out upon reaching a high value ($R^2$ \textgreater 0.9 as suggested by Langfelder and Horvarth).
+
+```{r, eval=FALSE}
+#calculation of adjacency matrix
+beta = 3
+a = s^beta
+```
+
+Lastly, the dissimilarity measure is defined by
+
+$$w_{ij} = 1 - a_{ij}$$
+
+```{r, eval=FALSE}
+#dissimilarity measure
+w = 1-a
+```
+
+Please note that TOM-based (topological overlap matrix) dissimilarity proposed by Horvarth and colleagues did not result in distinct gene modules for the analysed melanoma network. 
+
+#Identification of co-expression modules
+
+To identify co-expression modules, genes are next clustered based on the dissimilarity measure, where branches of the dendrogram correspond to modules. The gene dendrogram obtained by average linkage hierarchical clustering is depicted in figure 2. Ultimately, gene co-expression modules are detected by applying a branch cutting method. We employed the dynamic branch cut method developed by Langfelder and colleagues [^6], as constant height cutoffs exhibit suboptimal performance on complicated dendrograms. WGCNA of the 472 TCGA melanoma samples revealed 41 co-expression modules. All genes that are not significantly co-expressed within a module are summarized in an additional module 0 for further analysis.
+ 
+```{r, eval=FALSE}
+#create gene tree by average linkage hierarchical clustering 
+geneTree = hclust(as.dist(w), method = 'average')
+
+#module identification using dynamic tree cut algorithm
+modules = cutreeDynamic(dendro = geneTree, distM = w, deepSplit = 4, pamRespectsDendro = FALSE,
+                            minClusterSize = 30)
+#assign module colours
+module.colours = labels2colors(modules)
+
+#plot the dendrogram and corresponding colour bars underneath
+plotDendroAndColors(geneTree, module.colours, 'Module colours', dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05, main='')
+```
+
+The relation between the identified co-expression modules can be visualized by a dendrogram of their *eigengenes* (fig. 3). The module *eigengene* is defined as the first principal component of its expression matrix. It could be shown that the module= *eigengene* is highly correlated with the gene that has the highest intramodular connectivity[^6].
+
+```{r, eval=FALSE}
+library(ape)
+#calculate eigengenes
+MEs = moduleEigengenes(WGCNA_matrix, colors = module.colours, excludeGrey = FALSE)$eigengenes
+
+#calculate dissimilarity of module eigengenes
+MEDiss = 1-cor(MEs);
+
+#cluster module eigengenes
+METree = hclust(as.dist(MEDiss), method = 'average');
+
+#plot the result with phytools package
+par(mar=c(2,2,2,2))
+plot.phylo(as.phylo(METree),type = 'fan',show.tip.label = FALSE, main='')
+tiplabels(frame = 'circle',col='black', text=rep('',length(unique(modules))), bg = levels(as.factor(module.colours)))
+```
+
+#Relation of co-expression modules to sample traits
+
+An advantage of co-expression network analysis is the possibility to integrate external information. 
+At the lowest hierarchical level, *gene significance* (GS) measures can be defined as the statistical significance (i.e. p-value, $p_i$) between the $i$-th node profile (gene) $x_i$ and the sample trait $T$
+
+$$GS_i = -log~p_i$$
+
+*Module significance* in turn can be determined as the average absolute gene significance measure. This conceptual framework can be adapted to any research question. The clinical metadata used in the following was obtained from the recent TCGA melanoma publication[^2] (Supplemental Table S1D: Patient Centric Table). 
+
+```{r, eval=FALSE}
+#load clinical metadata. Make sure that patient barcodes are in the same format 
+#create second expression matrix for which the detailed clinical data is available 
+WGCNA_matrix2 = WGCNA_matrix[match(clinical$Name, rownames(WGCNA_matrix)),]
+
+#CAVE: 1 sample of detailed clinical metadata is not in downloaded data (TCGA-GN-A269-01')
+not.available = which(is.na(rownames(WGCNA_matrix2))==TRUE)
+WGCNA_matrix2 = WGCNA_matrix2[-not.available,]
+str(WGCNA_matrix2)
+
+#hence it needs to be removed from clinical table for further analysis
+clinical = clinical[-not.available,]
+```
+
+Representatively, co-expression modules will be related to the so called lymphocyte score, which summarises the lymphocyte distribution and density in the pathological review. 
+
+```{r, eval=FALSE}
+#grouping in high and low lymphocyte score (lscore)
+lscore = as.numeric(clinical$LYMPHOCYTE.SCORE)
+lscore[lscore<3] = 0
+lscore[lscore>0] = 1
+
+#calculate gene significance measure for lymphocyte score (lscore) - Welch's t-Test
+GS_lscore = t(sapply(1:ncol(WGCNA_matrix2),function(x)c(t.test(WGCNA_matrix2[,x]~lscore,var.equal=F)$p.value,
+                                          t.test(WGCNA_matrix2[,x]~lscore,var.equal=F)$estimate[1],
+                                          t.test(WGCNA_matrix2[,x]~lscore,var.equal=F)$estimate[2])))
+GS_lscore = cbind(GS.lscore, abs(GS_lscore[,2] - GS_lscore[,3]))
+colnames(GS_lscore) = c('p_value','mean_high_lscore','mean_low_lscore',
+                        'effect_size(high-low score)'); rownames(GS_lscore) = colnames(WGCNA_matrix2)
+```
+
+To enable a high-level interpretation of the dendrogram of module eigengenes, gene ontology (GO) enrichment analysis was performed for the module genes using the `GOstats` *R* package [^8]. Modules were named according to the most significant GO einrichment given a cutoff for the ontology size. The smaller the ontology size, the more specific the term. In this analysis a cutoff of 100 terms per ontology was chosen.
+
+```{r, eval=FALSE}
+#reference genes = all 5000 top mad genes 
+ref_genes = colnames(WGCNA_matrix2)
+
+#create data frame for GO analysis
+library(org.Hs.eg.db)
+GO = toTable(org.Hs.egGO); SYMBOL = toTable(org.Hs.egSYMBOL)
+GO_data_frame = data.frame(GO$go_id, GO$Evidence,SYMBOL$symbol[match(GO$gene_id,SYMBOL$gene_id)])
+
+#create GOAllFrame object
+library(AnnotationDbi)
+GO_ALLFrame = GOAllFrame(GOFrame(GO_data_frame, organism = 'Homo sapiens'))
+
+#create gene set
+library(GSEABase)
+gsc <- GeneSetCollection(GO_ALLFrame, setType = GOCollection())
+
+#perform GO enrichment analysis and save results to list - this make take several minutes
+library(GEOstats)
+GSEAGO = vector('list',length(unique(modules)))
+for(i in 0:(length(unique(modules))-1)){
+  GSEAGO[[i+1]] = summary(hyperGTest(GSEAGOHyperGParams(name = 'Homo sapiens GO', 
+              geneSetCollection = gsc, geneIds = colnames(RNAseq)[modules==i], 
+              universeGeneIds = ref.genes, ontology = 'BP', pvalueCutoff = 0.05, 
+              conditional = FALSE, testDirection = 'over')))
+  print(i)
+}
+
+cutoff_size = 100
+
+GO_module_name = rep(NA,length(unique(modules)))
+for (i in 1:length(unique(modules))){
+  GO.module.name[i] = 
+    GSEAGO[[i]][GSEAGO[[i]]$Size<cutoff_size,
+    ][which(GSEAGO[[i]][GSEAGO[[i]]$Size<cutoff_size,]$Count==max(GSEAGO[[i]][GSEAGO[[i]]$
+    Size<cutoff.size,]$Count)),7]
+}
+
+GO.module.name[1] = 'module 0'
+ 
+```
+
+
+```{r, eval=FALSE}
+#calculate module significance
+MS.lscore = as.data.frame(cbind(GS.lscore,modules))
+MS.lscore$log_p_value = -log10(as.numeric(MS.lscore$p_value))
+MS.lscore = ddply(MS.lscore, .(modules), summarize, mean(log_p_value), sd(log_p_value))
+colnames(MS.lscore) = c('modules','pval','sd')
+MS.lscore.bar = as.numeric(MS.lscore[,2])
+MS.lscore.bar[MS.lscore.bar<(-log10(0.05))] = 0
+names(MS.lscore.bar) = GO.module.name
+
+METree.GO = METree
+label.order = match(METree$labels,paste0('ME',labels2colors(0:(length(unique(modules))-1))))
+METree.GO$labels = GO.module.name[label.order]
+plotTree.wBars(as.phylo(METree.GO), MS.lscore.bar, tip.labels = TRUE, scale = 0.2)
+```
+
+#Exploration of individual genes within co-expression module
+
+Assessing the module significance for different sample traits facilitates an understanding of individual co-expression modules for melanoma biology. As for the prioritisation of variants we are next interested in the role of the variant gene within a co-expression module. To this end, Langfelder and Horvath suggest a 'fuzzy' measure of *module membership* defined as
+
+$$K^q = |cor(x_i,E^q)|$$
+
+where $x_i$ is the profile of gene $i$ and $E^q$ is the eigengene of module $q$. Based on this definition, $K$ describes how closely related gene $i$ is to module $q$. A meaningful visualization is consequently plotting the module membership over the p-value of the respective GS measure. As a third dimension, the dot-size is weighted according to the effect size. 
+
+```{r, eval=FALSE}
+#Calculate module membership
+MM = abs(bicor(RNAseq, MEs))
+
+#plot individual module of interest (MOI)
+MOI = 3 #T cell differentiation co-expression module
+plot(-log10(GS.lscore[modules==MOI,1]), MM[modules==MOI,MOI], pch=20,
+     cex=(GS.lscore[modules==MOI,4]/max(GS.lscore[,4],na.rm=TRUE))*4,
+     xlab='p-value (-log10) lymphocyte score', ylab='membership to module 3')
+abline(v=-log10(0.05), lty=2, lwd=2)
+```
+
+#Session information
+
+```{r}
+sessionInfo()
+```
+
+#References
+
+[^1]: Peter Langfelder and Steve Horvath. WGCNA: an R package for weighted correlation network analysis. In: BMC Bioinformatics 9 (Jan. 2008), pp. 559–559.
+
+[^2]: Cancer Genome Atlas Network. Genomic Classification of Cutaneous Melanoma. In: Cell 161.7 (June 2015), pp. 1681–1696.
+
+[^3]: Charity W Law et al. voom: Precision weights unlock linear model analysis tools for RNA-seq read counts. In: Genome biology 15.2 (Jan. 2014), R29–R29.
+
+[^4]: Chun-Hou Zheng et al. Gene differential coexpression analysis based on biweight correlation and maximum clique. In: BMC bioinformatics 15 Suppl 15 (2014), S3.
+
+[^5]: Bin Zhang and Steve Horvath. A general framework for weighted gene co-expression network analysis. In: Statistical applications in genetics and molecular biology 4 (2005), Article17.
+
+[^6]: Steve Horvath and Jun Dong. Geometric Interpretation of Gene Coexpression Network Analysis. In: PLoS Computational Biology (PLOSCB) 4(8) 4.8 (2008), e1000117–e1000117.
+
+[^7]: P Langfelder, B Zhang, and S Horvath. Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R. In: Bioinformatics 24.5 (Feb. 2008), pp. 719–720.
+
+[^8]: S Falcon and R Gentleman. Using GOstats to test gene lists for GO term association. In: Bioinformatics 23.2 (Jan. 2007), pp. 257–258.
