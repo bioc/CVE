@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "export(openCVE)\nexport(get.oncotator.anno)\nimportFrom(shiny,runApp)\nimport(ConsensusClusterPlus)\nimport(RColorBrewer)\nimport(gplots)\nimport(plyr)\nimport(ggplot2)\nimport(jsonlite)\nimport(ape)\nimport(WGCNA)\n",
+    "created" : 1488979592761.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3454529701",
+    "id" : "7D405F7",
+    "lastKnownWriteTime" : 1488979606,
+    "last_content_update" : 1488979606805,
+    "path" : "~/Documents/Manuscripts/CVEpaper/SVN/CVE/NAMESPACE",
+    "project_path" : "NAMESPACE",
+    "properties" : {
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_namespace"
+}

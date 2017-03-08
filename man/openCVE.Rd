@@ -19,8 +19,8 @@ The function to supplement the R package with the Shiny app was suggested by Dea
 }
 \examples{
 \donttest{
-openCVE(oncotator_example,"case study")
-openCVE(oncotator_example,"case study WGCNA","WGCNAmelanoma")
+openCVE(crcCase,"case study")
+openCVE(melanomaCase,"case study WGCNA",extension="WGCNAmelanoma")
 }
 }
 

@@ -6,8 +6,8 @@
 #' @param extension A character vector of extention name
 #' @examples
 #' \donttest{
-#' openCVE(oncotator_example,"case study")
-#' openCVE(oncotator_example,"case study WGCNA","WGCNAmelanoma")
+#' openCVE(crcCase,"case study")
+#' openCVE(melanomaCase,"case study WGCNA",extension="WGCNAmelanoma")
 #' }
 #' @export
 openCVE <- function(x, sample_names=NULL, extension=FALSE) {

@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "library(testthat)\nlibrary(CVE)\n\ntest_that(\"oncotator example file is in the right format\",\n          {\n            expect_that(crcCase, is.data.frame)\n          })\n\n\n",
+    "created" : 1488979359832.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1278922237",
+    "id" : "C3236409",
+    "lastKnownWriteTime" : 1488979376,
+    "last_content_update" : 1488979376369,
+    "path" : "~/Documents/Manuscripts/CVEpaper/SVN/CVE/tests/testthat.R",
+    "project_path" : "tests/testthat.R",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
