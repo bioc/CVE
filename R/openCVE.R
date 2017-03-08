@@ -10,7 +10,7 @@
 #' openCVE(oncotator_example,"case study WGCNA","WGCNAmelanoma")
 #' }
 #' @export
-openCVE <- function(x, sample_names, extension=FALSE) {
+openCVE <- function(x, sample_names=NULL, extension=FALSE) {
   #set app directory
   if(extension=="WGCNAmelanoma"){
     appDir <-system.file("Shiny","CVE_WGCNA_melanoma",package="CVE")
@@ -21,6 +21,9 @@ openCVE <- function(x, sample_names, extension=FALSE) {
     stop("Could not find example directory. Try re-installing `CVE`.", call. = FALSE)
   }
 
+  if(is.null(sample_names)){
+  sample_names = "sample"
+  }
   #if data frame -> turn into list
   if(class(x)=="data.frame"){
     z = vector("list",1)
@@ -42,15 +45,26 @@ openCVE <- function(x, sample_names, extension=FALSE) {
 #Data set documentation
 ####################
 
-#' Example Oncotator output for the case study described in the paper
+#' Example Oncotator output for the melanoma cohort study described in the paper
 #'
-#' A dataset containing the example Oncotator output for the case study described in the paper
+#' An Oncotator MAF file
 #'
 #'
 #' @docType data
 #' @keywords datasets
-#' @name oncotator_example
+#' @name melanomaCase
 NULL
+
+#' Example Oncotator output for the single-patient colorectal cancer sample
+#'
+#' An Oncotator MAF file
+#'
+#'
+#' @docType data
+#' @keywords datasets
+#' @name crcCase
+NULL
+
 
 #' UV signature gene significance (GS)
 #'

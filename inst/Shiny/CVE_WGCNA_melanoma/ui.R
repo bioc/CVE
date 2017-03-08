@@ -1,12 +1,13 @@
-#######################################################
-#CANCER VARIANT EXPLORER V1.0 - WGCNAmelanoma extension
+#################################
+#CANCER VARIANT EXPLORER V1.1
+#WGCNAmelanoma extension
 #Graphical user interface script
 #Andreas Mock
 #University of Cambridge
-#######################################################
+#################################
 
 shinyUI(fluidPage(
-  titlePanel("Cancer Variant Explorer"),
+  titlePanel("CVE - Cancer Variant Explorer v1.1"),
 
   #########################
   ####Layout of sidebar####
@@ -21,10 +22,11 @@ shinyUI(fluidPage(
       textOutput("nCoding_SNVs"),
       tags$hr(),
       h4("PRIORITISATION"),
-      sliderInput("comb_score", label = "dbNSFP combination score cutoff",
+      textOutput("algorithm_choice"),
+      sliderInput("comb_score", label = "",
                   min = 0, step = 0.1, max = 4, value = 0),
       checkboxGroupInput("db", label = "Filters",
-                         choices = list("exclude 1000 Genomes Project variants"=1,
+                         choices = list("exclude germline variants"=1,
                                         "include all COSMIC variants"=2,
                                         "include non-SNVs"=3,
                                         "include all DNA repair gene variants"=4)
@@ -37,12 +39,12 @@ shinyUI(fluidPage(
       downloadButton('downloadTop', 'download top table'),
       tags$hr(),
       h4("Melanoma WGNCA"),
-         selectInput("module", label=h5("Co-expression module"),selected = 3,
-                     choices = list(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
-                                    20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42)),
-         selectInput("measure", label=h5("Gene significance measure"),selected = 1,
-                     choices = list("lymphocyte score" = 1, "primary vs met" = 2, "UV signature" = 3, "survival"=4, "vemurafenib resistance"=5)),
-         checkboxInput("names",p("show all gene names")),
+      selectInput("module", label=h5("Co-expression module"),selected = 3,
+                  choices = list(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
+                                 20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42)),
+      selectInput("measure", label=h5("Gene significance measure"),selected = 1,
+                  choices = list("lymphocyte score" = 1, "primary vs met" = 2, "UV signature" = 3, "survival"=4, "vemurafenib resistance"=5)),
+      checkboxInput("names",p("show all gene names")),
       tags$hr(),
       h4("DRUGGABILITY"),
       p("Step 1: go to Druggability tab in main panel"),
@@ -59,6 +61,7 @@ shinyUI(fluidPage(
         tabPanel("Annotation",
                  h4("Functional consequence annotation from",
                     a("GENCODE", href = "http://www.gencodegenes.org")),
+                 p("CVE only prioritises variants with a predicted protein-changing effect."),
                  fluidRow(
 
                    column(3,
@@ -70,9 +73,11 @@ shinyUI(fluidPage(
                    )
                  ),
                  tags$hr(),
-                 h4("Identification of",
-                    a("dbNSFP", href = "https://sites.google.com/site/jpopgen/dbNSFP"),
-                    "prediction modules"),
+                 h4("Choice of variant effect prediction algorithm"),
+                 p("The heatmap shows which algorithms are correlated with each other (consensus clustering).
+                   For most data sets, 4 clusters emerge. We recommend at least 20 permutations.
+                   For prioritisation either choose one algorithm or the dbNSFP combination score",a("(see vignette).",
+                  href = "https://bioconductor.org/packages/release/bioc/vignettes/CVE/inst/doc/CVE_tutorial.html")),
                  fluidRow(
 
                    column(3,
@@ -81,12 +86,21 @@ shinyUI(fluidPage(
                    ),
                    column(3,
                           sliderInput("pred_modules", label=h5("number of modules"),
-                                      min = 2, step = 1, max = 6, value = 4))
+                                      min = 2, step = 1, max = 6, value = 4)),
+                   column(4,
+                          selectInput("algorithm", label = h5("choose algorithm"),
+                                      choices=c("dbNSFP combination score","CADD_raw","FATHMM","GERP.._RS","LRT_converted" ,"LR",
+                                                "MutationAssessor","MutationTaster_converted","Polyphen2_HDIV",
+                                                "Polyphen2_HVAR","RadialSVM","SIFT_converted","SiPhy_29way_logOdds" ,
+                                                "phastCons100way_vertebrate","phastCons46way_placental", "phastCons46way_primate",
+                                                "phyloP100way_vertebrate","phyloP46way_placental","phyloP46way_primate")))
                  ),
                  plotOutput("ConsHM", height=550, width=700)
         ),
         ####PRIORITISATION####
         tabPanel("Prioritisation",
+                 h4("Variant prioritisation using algorithm score cutoff and filters"),
+                 p("Apply filters in the side panel for a tailored analysis."),
                  fluidRow(
                    column(6,
                           plotOutput("Centroid", height=300, width=300)
@@ -115,7 +129,7 @@ shinyUI(fluidPage(
                  textOutput("topgenes_in_modules"),
                  plotOutput("MS",height=650, width=720),
                  plotOutput("MExploration", width=705, height=500)
-                 ),
+        ),
         ####DRUGGABILITY####
         tabPanel("Druggability",
                  h4("Drug-gene interactions from",

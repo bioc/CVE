@@ -25,44 +25,86 @@ source('http://www.bioconductor.org/biocLite.R')
 biocLite('CVE')
 ```
 
-and once installed loaded into the R session by
+and once installed loaded by
 
 ```{r,eval=FALSE}
 library(CVE)
 ```
 
-# Input data
+# Single-patient case study
 
-As input data, CVE leverages output files of the Oncotator Annotation Tool[^1] to prioritise variants. Oncotator has been the Broad Institute’s internal Cancer Genome Analysis pipeline since 2011 and has been successfully applied in numerous high-profile studies. It is a tool for annotating genomic point mutations and short nucleotide insertions/deletions (indels) summarizing information from 14 different publicly available resources relevant for cancer researchers. The authors provide Oncotator both as a web application and a command line tool (http://www.broadinstitute.org/oncotator/). As input information, Oncotator requires the genomic position, reference allele and variant allele in a tab-separated file. Alternatively the VCF format[^2], or the muTect call stats format[^3] can be used. The output is a single tab-separated  file with annotation of all databases in a variant-centric manner.
+Variant information is downloaded for a single colorectal cancer patient using 
+the `RTCGAToolbox` package.
 
+```{r,message=FALSE}
+#load package
+library(RTCGAToolbox)
 
-The CVE package includes the example Oncotator output file `oncotator_example` for the 1087 mutations prioritised in the melanoma case study. CVE can either work with a data frame containing the output file of one sample or a list containing multiple files.
-
-```{r, echo=F,results='hide', eval=F}
-load_all()
+#load all colorectal cancer data 
+crcData = getFirehoseData(dataset="COAD",
+                          Clinic=TRUE,
+                          Mutation=TRUE,
+                          runDate="20160128")
 ```
 
-# Reading data and opening the Shiny app
+```{r}
+#pick a single patient for case study
+crcCase_Firehouse = crcData@Mutations[crcData@Mutations$Tumor_Sample_Barcode=="TCGA-AA-A00N-01A-02W-A00E-09",]
+```
 
-The function `openCVE` opens the CVE Shiny app. It requires the oncotator output file as a data frame (output of 1 sample) or a list (output of multiple samples) and the corresponding sample name(s). As an examplar, CVE can be opened with the example Oncotator output file  `oncotator_example` as follows
+The colon adeonocarcinoma sample harbors 4709 variants. CVE requires a data frame including the columns chromosome, start, end, reference allele and observed allele.
+
+```{r}
+crcCase_input = data.frame(chr=crcCase_Firehouse$Chromosome,
+                      start=crcCase_Firehouse$Start_position,
+                      end=crcCase_Firehouse$End_position,
+                      reference_allele=crcCase_Firehouse$Reference_Allele,
+                      observed_allele=crcCase_Firehouse$Tumor_Seq_Allele2)
+head(crcCase_input)
+```
+
+# Annotate variants using Oncotator 
+
+The following function retrieves the Oncotator annotation via the Application Programming Interface (an internet connection is needed for this step). The Oncotator Variant Annotation tool summarises variant-centric information from 14 different publicly available resources relevant for cancer researchers [^1]. For more information, see [Oncotator webpage](http://portals.broadinstitute.org/oncotator/help/).
+
+```{r,eval=FALSE}
+library(jsonlite)
+crcCase = get.oncotator.anno(crcCase_input)
+```
+
+
+# Opening the Shiny app 
+
+The function `openCVE` opens the CVE Shiny app. It requires the Oncotator output file (MAF file) as a data frame or a list of multiple MAF files. The single-patient case study in a colon adenocarcinoma can be loaded with
 
 ```{r, eval=FALSE}
-openCVE(oncotator_example, sample_names='case study')
+openCVE(crcCase)
 ```
 
 # CVE functionality
-
-The CVE Shiny app offers four different tabs to explore variants with corresponding filters. For more details, please refer to the manuscript[^4].
+The core implementation of the CVE Shiny app offers four different tabs to explore variants. 
 
 ## Annotation
 
-The first part of the annotation tab summarises the functional consequence annotation from GENCODE including the variant classification. Using the filter on the left side panel of the Shiny app, the user has the flexibility to include or exclude non-SNVs. In the second part, the user has to determine the number of dbNSFP prediction modules using the consensus clustering of the 18 functional prediction scoring algorithms. For details about the dbNSFP combination score and chosing the right number of prediction modules please refer to the methods of the paper.
+The first part of the annotation tab summarises the functional consequence annotation from GENCODE including the [variant classification](http://gatkforums.broadinstitute.org/gatk/discussion/4220/what-is-the-difference-between-tx-mode-best-effect-vs-canonical) (e.g. missense, nonsense, frame-shift etc.). The left side panel of CVE offers a filter to also include non-SNVs for further prioritisation. The bottom part displays the heatmap of the clusters of mutational effect prediction algorithm from the dbNSFP database[^4] for the dataset. The algorithms primarily exploit the reasoning that more deleterious gene regions have fewer observed substitutions across species due to tighter evolutionary constrains (i.e. conservation-based algorithms) or the different physico-chemical properties of amino acids and the corresponding three-dimensional protein structure (i.e. functional prediction algorithms). In addition, ensembl scores combining different approaches have been developed (e.g. CADD). For more information about the individual algorithm, see \href{http://portals.broadinstitute.org/oncotator/help/}{http://portals.broadinstitute.org/oncotator/help/}. Of note, CVE does neither benchmark the scores of the functional prediction algorithms, nor tries to derive the best score. Instead, it displays the heterogeneity of predication based on the rankscores of the 18 algorithms. The rankscores are between 0 and 1, where 1 indicates the highest rank amoung the 87,347,043 non-synonymous single-nucleotide variants. CVE depicts algorithms with similar rankscores for the variants by means of a heatmap of the consensus indices derived by consensus clustering
+Based on the heatmap, the user can select a single prediction algorithm resembling the information of one algorithm cluster of choice. In addition, for users unfamiliar with the prospects of the individual algorithms we propose the dbNSFP combination score $c$
+
+$$c = \sum_{j= 1}^{m} y_j \qquad \text{with} \qquad y_j = 
+\begin{cases}
+ \overline{x_{ij}} & \text{if} \quad \overline{x_{ij}} \geq 0.75\\
+0 & \text{if} \quad \overline{x_{ij}} < 0.75 
+\end{cases}$$
+ 
+where $x_{ij}$ is the rankscore of algorithm $i$ in cluster $j$ and $\overline{x_{ij}}$ the mean rankscore of algorithm cluster $j$. $\overline{x_{ij}}$ is only added to $c$ if there is significant evidence for the variant in algorithm cluster $j$, defined by a mean rankscore belonging to the upper quartile of rankscores. 
 
 ## Prioritisation
 
-Depending on the scientific question, a more or less restrictive prioritisation of variants is warranted. A study aiming to suggest options for targeted therapies might only be interested in the most promising druggable variant within an exome data set. On the contrary, for targeted sequencing, 10-100 variants are a feasible number to monitor key genomic changes over the disease course (e.g. analysis of circulating cell free tumour DNA, ctDNA). Therefore, CVE offers the instant and flexible modification of key filters and cutoffs.
+Depending on the scientific question, a more or less restrictive prioritisation of variants is warranted. A study aiming to suggest options for targeted therapies might only be interested in the most promising druggable variant within an exome data set. On the contrary, for targeted sequencing, 10-100 variants are a feasible number to monitor key genomic changes over the disease course (e.g. analysis of circulating cell free tumour DNA, ctDNA). Therefore, CVE offers the instant and flexible modification of key filters and cutoffs.At the core of the prioritisation workflow is the functional prediction algorithm of choice. An interactive slider in the left sidebar panel can be used to modify the cutoff. In addition to the dbNSFP data, the Oncotator annotation includes further information that can be used for priortisation. We recommend to 
 
-At the core of the prioritisation workflow is the dbNSFP combination score described in the methods part of the paper. An interactive slider in the left sidebar panel can be used to modify the dbNSFP combination score cutoff. In addition to the dbNSFP data, the Oncotator annotation includes additional information employed for further prioritisation. Firstly, common SNVs identified by the 1000 Genomes project can be excluded from further analysis. Secondly, overlapping COSMIC variants are presented. Thirdly, variants in known DNA repair genes as presented by Wood et al.[^5] are displayed and can also be fully included by applying another  filter.
+- exclude germline SNVs identified by the 1000 Genomes project
+- include all overlapping COSMIC variants 
+
+Optionally, variants in known DNA repair genes as summarised by Wood et al.[^3] are displayed and can also be included by applying another filter.
 
 
 ## Top table
@@ -70,27 +112,38 @@ At the core of the prioritisation workflow is the dbNSFP combination score descr
 A table of the prioritised variants can be accessed in the top table tab. For easy data handling, this top table can also be downloaded as a tab-separated spread sheet using the download button in the sidebar. The columns of the top table summarize:
 
 * gene: gene symbol
-* variant: location of amino acid change in protein
-* type: SNV, dinucleotide substitution (DNP), deletion (DEL) or insertion
-(INS)
-* dbNSFP score: sbNSFP combination score
-* COSMIC variant: overlapping COSMIC variant and number of recurrence
-across tumour entities
+* protein change: location of amino acid change in protein
+* type: SNV, dinucleotide substitution (DNP), deletion (DEL) or insertion (INS)
+* classification: functional consequence annotation from GENCODE
+* score: (rank)score of the mutational effect prediction algorithm selected
+* COSMIC entity: number of mutations identified per tumour entity in the COSMIC database
 
-For reproduciblity, the header of the top table includes all filters chosen to prioritise the variants.
+For reproduciblity, the header of the top table includes all filters seleted to prioritise the variants.
 
 ## Druggability
 
 At this point of the workflow, variants were annotated, ranked and prioritised. As a result, we are left with a handful of variants likely to be essential to the individual tumour biology. The next step required to guide precision cancer medicine is the assessment of the druggability of candidate variants. 
 
-Up to date, the Drug-Gene Interaction database (DGIdb)[^6] offers the most comprehensive collection of drug-gene interactions. Within DGIdb, CVE only queries the TEND and My Cancer Genome information, as both sources were expert-curated and comprise multiple tumour types. CVE accesses the DGIdb data via the application programming interface (API). This way, no local installation of the database is needed and entries are automatically up-to-date. The interactions found can be explored in a data table which can also also downloaded as a csv file in the left sidepanel of CVE.
+Up to date, the Drug-Gene Interaction database (DGIdb)[^2] offers the most comprehensive collection of drug-gene interactions. Within DGIdb, CVE only queries the TEND and My Cancer Genome information, as both sources were expert-curated and comprise multiple tumour types. CVE accesses the DGIdb data via the application programming interface (API). This way, no local installation of the database is needed and entries are automatically up-to-date. The interactions found can be explored in a data table which can also also downloaded as a csv file in the sidepanel of CVE.
 
-# WGCNAmelanoma extension
+## Summary of case study
 
-Running CVE with the WGCNAmelanoma extension enables the exploration of variant genes in the melanoma specific pathway context. In recent years, Precision Cancer Medicine has primarily focussed on recurrent SNVs, as they are often key drivers of tumourigenesis and suitable for clinical decision making. The prioritisation workflow described so far helps to identify variants with likely functional impact on protein function. Consequently, we next aim to assess the role of these proteins in the entity-specific tumour biology. To this end, transcriptomic analyses are often used as a surrogate for proteomic analyses that are still more laborious and often less comprehensive. As an increasingly popular means to explore the system-level functionality of gene products, we a derived melanoma-specific gene interaction network by weighted co-expression network analysis (WGCNA) of publicly available RNAseq data. For more information regarding WGNCA see the vignette `WGCNA_from_TCGA_RNAseq`. CVE with the WGCNAmelanoma extention can be launched by
+CVE reveals the following points about the single colorectal cancer:
+
+- 68 protein-changing SNVs (total of 4709 variants)
+- only 5 variants in the genes TMPRSS12, HNRNPUL1, KLK11, DNAJC6 and PCDHGB1 have evidence for a function impact in at least one prediction cluster (dbNSFP cutoff >0.75)
+- 2 variants were previously identified in other tumour entities (TMPRSS12 p.D262N in urinary tract tumor; MOSPD3 p.G139E in prostate cancer)
+- NOTCH4 p.P1723S is putatively druggable by the drug RO4929097 and NTRK1 p.I328M by Imatinib, however, both variants have a dbNSFP combination score of 0 = no predicted functional impact
+
+
+# Melanoma cohort case study and WGCNA extension
+
+CVE can also be applied in cohort variant data. As a meaningful cohort we chose BRAF-wt/RAS-wt melanomas, as they can neither be target with BRAF nor MEK inhibitors in the metastasised setting. We gathered the case study from The Cancer Genome Atlas [^5]. 93 of the 345 patients could be classfied as BRAF-wt/RAS-wt. The four tabs in the core implementation of CVE can be applied to all tumor entities. 
+To illustrate the functionality and flexibility of an open-source R code, we developed a first extension to explore variant genes of interest in a melanoma-specific pathway context. To this end, we generated a melanoma-specfic coexpression network from TCGA data using the WGCNA methodology (see vignette `WGCNA_from_TCGA_RNAseq`).
+To start the melanoma cohort study with the extension:
 
 ```{r, eval=FALSE}
-openCVE(oncotator_example, sample_names='case study', extension='WGCNAmelanoma')
+openCVE(melanomaCase, extension="WGCNAmelanoma")
 ```
 
 
@@ -103,13 +156,11 @@ sessionInfo()
 # References
 [^1]: Ramos, A.H., Lichtenstein, L., Gupta, M., Lawrence, M.S., Pugh, T.J., Saksena, G., Meyerson, M., Getz, G.: Oncotator: Cancer Variant Annotation Tool. Human Mutation 36(4), 2423–2429 (2015)
 
-[^2]: Danecek, P., Auton, A., Abecasis, G., Albers, C. A., Banks, E., DePristo, M. A., Handsaker, R. E., Lunter, G., Marth, G. T., Sherry, S. T., McVean, G., Durbin, R., and 1000 Genomes Project Analysis Group (2011). The variant call format and VCFtools. Bioinformatics, 27(15):2156–2158.
+[^2]: Griffith, M., Grif th, O. L., Coffman, A. C., Weible, J. V., McMichael, J. F., Spies, N. C., Koval, J., Das, I., Callaway, M. B., Eldred, J. M., et al. (2013). DGIdb: mining the druggable genome. Nature methods, 10(12):1209–1210.
 
-[^3]: Cibulskis, K., Lawrence, M. S., Carter, S. L., Sivachenko, A., Jaffe, D., Sougnez, C., Gabriel, S., Meyerson, M., Lander, E. S., and Getz, G. (2013). Sensitive detection of somatic point mutations in impure and heterogeneous cancer samples. Nature Biotechnology, 31(3):213–219.
-
-[^4]: Mock, A., Murph, S., Morris, J., Marass, F., Rosenfeld, N., Massie, C.: CVE: an interactive R package for variant prioritisation in precision cancer medicine. 
-
-[^5]: Wood, R. D., Mitchell, M., and Lindahl, T. (2005). Human DNA repair genes, 2005. Mutation
+[^3]: Wood, R. D., Mitchell, M., and Lindahl, T. (2005). Human DNA repair genes, 2005. Mutation
 research, 577(1-2):275–283.
 
-[^6]: Griffith, M., Grif th, O. L., Coffman, A. C., Weible, J. V., McMichael, J. F., Spies, N. C., Koval, J., Das, I., Callaway, M. B., Eldred, J. M., et al. (2013). DGIdb: mining the druggable genome. Nature methods, 10(12):1209–1210.
+[^4]: Liu, X., Jian, X., & Boerwinkle, E. (2013). dbNSFP v2.0: a database of human non-synonymous SNVs and their functional predictions and annotations. Human Mutation, 34(9), E2393–E2402. http://doi.org/10.1002/humu.22376
+
+[^5]: Cancer Genome Atlas Network. (2015). Genomic Classification of Cutaneous Melanoma. Cell, 161(7), 1681–1696. http://doi.org/10.1016/j.cell.2015.05.044
