@@ -2,7 +2,9 @@
 #' @description The get.oncotator.anno retrieves annotation from the Oncotator database.
 #' @param x A matrix containing the columns chromosome, start, end, reference_allele and observed_allele.
 #' @examples
+#' \donttest{
 #' get.oncotator.anno(crcCase_input)
+#' }
 #' @export
 get.oncotator.anno = function(x){
   urls = paste0("http://portals.broadinstitute.org/oncotator/mutation/",

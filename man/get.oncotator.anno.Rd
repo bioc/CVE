@@ -13,6 +13,8 @@ get.oncotator.anno(x)
 The get.oncotator.anno retrieves annotation from the Oncotator database.
 }
 \examples{
+\donttest{
 get.oncotator.anno(crcCase_input)
+}
 }
 

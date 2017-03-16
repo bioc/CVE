@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "#' Open Cancer Variant Explorer (CVE) Shiny app\n#' @description The get.oncotator.anno retrieves annotation from the Oncotator database.\n#' @param x A matrix containing the columns chromosome, start, end, reference_allele and observed_allele.\n#' @examples\n#' \\donttest{\n#' get.oncotator.anno(crcCase_input)\n#' }\n#' @export\nget.oncotator.anno = function(x){\n  urls = paste0(\"http://portals.broadinstitute.org/oncotator/mutation/\",\n                as.vector(x[,1]),\"_\",\n                as.vector(x[,2]),\"_\",\n                as.vector(x[,3]),\"_\",\n                as.vector(x[,4]),\"_\",\n                as.vector(x[,5]),\"/\")\n  data.frame(t(sapply(1:length(urls),function(x) fromJSON(urls[x]))))\n}\n\n",
+    "created" : 1489676625626.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3606049019",
+    "id" : "1AB0BB5C",
+    "lastKnownWriteTime" : 1489676659,
+    "last_content_update" : 1489676659070,
+    "path" : "~/Documents/Manuscripts/CVEpaper/SVN/CVE/R/get.oncotator.anno.R",
+    "project_path" : "R/get.oncotator.anno.R",
+    "properties" : {
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
