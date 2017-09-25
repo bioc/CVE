@@ -41,15 +41,17 @@ the `RTCGAToolbox` package.
 library(RTCGAToolbox)
 
 #load all colorectal cancer data 
-crcData = getFirehoseData(dataset="COAD",
-                          Clinic=TRUE,
+crcData <- getFirehoseData(dataset="COAD",
+                          clinic=TRUE,
                           Mutation=TRUE,
                           runDate="20160128")
 ```
 
 ```{r}
 #pick a single patient for case study
-crcCase_Firehouse = crcData@Mutations[crcData@Mutations$Tumor_Sample_Barcode=="TCGA-AA-A00N-01A-02W-A00E-09",]
+mutData <- Mutation(crcData)
+crcCase_Firehouse <- mutData[mutData[["Tumor_Sample_Barcode"]] == 
+    "TCGA-AA-A00N-01A-02W-A00E-09",]
 ```
 
 The colon adeonocarcinoma sample harbors 4709 variants. CVE requires a data frame including the columns chromosome, start, end, reference allele and observed allele.
@@ -69,7 +71,7 @@ The following function retrieves the Oncotator annotation via the Application Pr
 
 ```{r,eval=FALSE}
 library(jsonlite)
-crcCase = get.oncotator.anno(crcCase_input)
+crcCase <- get.oncotator.anno(crcCase_input)
 ```
 
 
