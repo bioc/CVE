@@ -14,12 +14,8 @@ NULL
 #'     obs_allele = c("G", "A", "A"))
 #' get.oncotator.anno(exCase)
 #' @export
-get.oncotator.anno = function(x){
-  urls = paste0("http://portals.broadinstitute.org/oncotator/mutation/",
-                as.vector(x[,1]),"_",
-                as.vector(x[,2]),"_",
-                as.vector(x[,3]),"_",
-                as.vector(x[,4]),"_",
-                as.vector(x[,5]),"/")
-  data.frame(t(sapply(1:length(urls),function(x) fromJSON(urls[x]))))
+get.oncotator.anno <- function(x) {
+  urls <- paste0("http://portals.broadinstitute.org/oncotator/mutation/",
+     apply(x, 1L, function(y) paste0(paste0(y, collapse = "_"), "/")))
+  data.frame(t(sapply(seq_along(urls), function(i) fromJSON(urls[i]))))
 }

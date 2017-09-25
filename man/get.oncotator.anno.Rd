@@ -13,8 +13,10 @@ get.oncotator.anno(x)
 The get.oncotator.anno retrieves annotation from the Oncotator database.
 }
 \examples{
-\donttest{
-get.oncotator.anno(crcCase_input)
+exCase <- data.frame(chr = rep(10, 3),
+    start = c("100894110", "100985376", "101137905"),
+    end = c("100894110", "100985376", "101137905"),
+    ref_allele = c("T", "C", "G"),
+    obs_allele = c("G", "A", "A"))
+get.oncotator.anno(exCase)
 }
-}
-
