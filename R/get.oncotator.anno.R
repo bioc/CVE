@@ -1,4 +1,9 @@
+#' @import ConsensusClusterPlus RColorBrewer gplots plyr
+#' @import ggplot2 jsonlite ape WGCNA
+NULL
+
 #' Open Cancer Variant Explorer (CVE) Shiny app
+#'
 #' @description The get.oncotator.anno retrieves annotation from the Oncotator database.
 #' @param x A matrix containing the columns chromosome, start, end, reference_allele and observed_allele.
 #' @examples
@@ -15,4 +20,3 @@ get.oncotator.anno = function(x){
                 as.vector(x[,5]),"/")
   data.frame(t(sapply(1:length(urls),function(x) fromJSON(urls[x]))))
 }
-

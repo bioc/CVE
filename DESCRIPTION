@@ -1,12 +1,13 @@
 Package: CVE
 Title: Cancer Variant Explorer
-Version: 1.3.1
+Version: 1.3.2
 Authors@R: person("Andreas", "Mock", email = "mock.science@gmail.com", role = c("aut", "cre"))
 Author: Andreas Mock [aut, cre]
 Maintainer: Andreas Mock <mock.science@gmail.com>
 Description: Shiny app for interactive variant prioritisation in precision oncology. The input file for CVE is the output file of the recently released Oncotator Variant Annotation tool summarising variant-centric information from 14 different publicly available resources relevant for cancer researches. Interactive priortisation in CVE is based on known germline and cancer variants, DNA repair genes and functional prediction scores. An optional feature of CVE is the exploration of the tumour-specific pathway context that is facilitated using co-expression modules generated from publicly available transcriptome data. Finally druggability of prioritised variants is assessed using the Drug Gene Interaction Database (DGIdb).
 Depends:
-    R (>= 3.3),
+    R (>= 3.4.0)
+Imports:
     shiny,
     ConsensusClusterPlus,
     RColorBrewer,
@@ -15,14 +16,14 @@ Depends:
     ggplot2,
     jsonlite,
     ape,
-    WGCNA,
-    RTCGAToolbox
+    WGCNA
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
 Suggests: knitr,
     rmarkdown,
+    RTCGAToolbox,
     testthat,
     BiocStyle
 VignetteBuilder: knitr
