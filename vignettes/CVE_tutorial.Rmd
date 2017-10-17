@@ -42,14 +42,14 @@ library(RTCGAToolbox)
 
 #load all colorectal cancer data 
 crcData <- getFirehoseData(dataset="COAD",
-                          clinic=TRUE,
+                          clinical=TRUE,
                           Mutation=TRUE,
                           runDate="20160128")
 ```
 
 ```{r}
 #pick a single patient for case study
-mutData <- Mutation(crcData)
+mutData <- selectType(crcData, "Mutation")
 crcCase_Firehouse <- mutData[mutData[["Tumor_Sample_Barcode"]] == 
     "TCGA-AA-A00N-01A-02W-A00E-09",]
 ```
