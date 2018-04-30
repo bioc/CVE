@@ -1,6 +1,6 @@
 Package: CVE
 Title: Cancer Variant Explorer
-Version: 1.6.0
+Version: 1.7.0
 Authors@R: person("Andreas", "Mock", email = "mock.science@gmail.com", role = c("aut", "cre"))
 Author: Andreas Mock [aut, cre]
 Maintainer: Andreas Mock <mock.science@gmail.com>
