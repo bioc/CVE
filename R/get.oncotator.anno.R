@@ -16,6 +16,9 @@ NULL
 #' @export
 get.oncotator.anno <- function(x) {
   urls <- paste0("http://portals.broadinstitute.org/oncotator/mutation/",
-     apply(x, 1L, function(y) paste0(paste0(y, collapse = "_"), "/")))
-  data.frame(t(sapply(seq_along(urls), function(i) fromJSON(urls[i]))))
+    apply(x, 1L, function(y) paste0(paste0(y, collapse = "_"), "/")))
+  df <- data.frame(t(sapply(seq_along(urls), function(i) fromJSON(urls[i]))))
+  df <- apply(df,2,unlist)
+  df <- apply(df,2,as.factor)
+  as.data.frame(df)
 }

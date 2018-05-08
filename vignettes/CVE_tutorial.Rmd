@@ -1,15 +1,19 @@
 ---
-title: 'Cancer Variant Explorer (CVE) tutorial'
-author: | 
-  | Andreas Mock
-  | Cancer Research UK Cambridge Institute, University of Cambridge
-date: '`r Sys.Date()`'
-output: BiocStyle::html_document
+title: "Cancer Variant Explorer (CVE) tutorial"
+author:
+- name: Andreas Mock
+  affiliation: University Hospital and National Center for Tumor Diseases (NCT), Heidelberg
+  email: andreas.mock@med.uni-heidelberg.de
+package: CVE
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
 fig_caption: yes
-vignette: >
+vignette: |
   %\VignetteIndexEntry{Cancer Variant Explorer (CVE) tutorial}
   %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{utf8}
+  %\VignetteEncoding{UTF-8}  
 ---
 
 # Introduction
@@ -155,7 +159,6 @@ openCVE(melanomaCase, extension="WGCNAmelanoma")
 sessionInfo()
 ```
 
-# References
 [^1]: Ramos, A.H., Lichtenstein, L., Gupta, M., Lawrence, M.S., Pugh, T.J., Saksena, G., Meyerson, M., Getz, G.: Oncotator: Cancer Variant Annotation Tool. Human Mutation 36(4), 2423–2429 (2015)
 
 [^2]: Griffith, M., Grif th, O. L., Coffman, A. C., Weible, J. V., McMichael, J. F., Spies, N. C., Koval, J., Das, I., Callaway, M. B., Eldred, J. M., et al. (2013). DGIdb: mining the druggable genome. Nature methods, 10(12):1209–1210.

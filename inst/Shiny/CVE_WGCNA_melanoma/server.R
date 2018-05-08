@@ -60,7 +60,7 @@ suppressWarnings(
 )
 
 #define colours for plotting
-hmcol <- rev(colorRampPalette(brewer.pal(10, "RdBu"))(256))
+hmcol <- rev(colorRampPalette(RColorBrewer::brewer.pal(10, "RdBu"))(256))
 palette_breaks <- seq(0,1,length.out = 257)
 
 #####################################################
@@ -78,7 +78,7 @@ shinyServer(function(input, output, session) {
   })
 
   output$varianttype <- renderPlot({
-    ggplot(v[[input$sample]], aes(x=variant_type)) +
+      ggplot2::ggplot(v[[input$sample]], ggplot2::aes(x=variant_type)) +
       geom_bar(stat="count") + xlab("") +
       theme_bw() + ylab("count")
   })
@@ -88,7 +88,7 @@ shinyServer(function(input, output, session) {
     var_col[var_col %in% pc_cat] = "protein-changing"
     var_col[!var_col =="protein-changing"] = "other"
     df = as.data.frame(cbind(v[[input$sample]], var_col))
-    ggplot(df, aes(x=variant_classification, fill=var_col)) +
+    ggplot2::ggplot(df, ggplot2::aes(x=variant_classification, fill=var_col)) +
       geom_bar(stat="count") + coord_flip() +
       xlab("") + theme_bw() +
       guides(fill=guide_legend(reverse=TRUE)) +
@@ -107,7 +107,7 @@ shinyServer(function(input, output, session) {
     for (n in 1:length(v)){
       M_temp = pcv[[n]]$rs_matrix[!sapply(1:nrow(pcv[[n]]$rs_matrix),
                                           function(x) TRUE %in% is.na(pcv[[n]]$rs_matrix)[x,]),]
-      ConsClust[[n]] = ConsensusClusterPlus(
+      ConsClust[[n]] = ConsensusClusterPlus::ConsensusClusterPlus(
         sweep(M_temp,1,apply(M_temp,1,median,na.rm=T)),maxK=6,reps=input$nperm,
         pItem=0.8,pFeature=0.5, clusterAlg="hc",distance="pearson",
         seed=1262118388.71279,plot=NULL, verbose=FALSE)
@@ -163,7 +163,7 @@ shinyServer(function(input, output, session) {
     score_col = c("orange","blueviolet","yellow","blueviolet","orange",
                   rep("blueviolet",4),"orange","blueviolet",rep("yellow",7))
     plot.new()
-    heatmap.2(ConsClust[[input$sample]][[as.numeric(
+    gplots::heatmap.2(ConsClust[[input$sample]][[as.numeric(
       input$pred_modules)]]$ml,margins=c(17,17),col=hmcol,
       ColSideColors = ConsClust[[input$sample]][[as.numeric(
         input$pred_modules)]]$clrs[[1]], RowSideColors = score_col,trace="n",
@@ -349,7 +349,7 @@ shinyServer(function(input, output, session) {
       url = paste0("http://dgidb.genome.wustl.edu/api/v1/interactions.json?genes=",
                    paste(genes, collapse=","),
                    "&drug_types=antineoplastic&interaction_sources=TEND,MyCancerGenome")
-      JSON = fromJSON(url)
+      JSON = jsonlite::fromJSON(url)
     }
   })
 
