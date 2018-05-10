@@ -1,6 +1,6 @@
 Package: CVE
 Title: Cancer Variant Explorer
-Version: 1.7.11
+Version: 1.7.12
 Authors@R: person("Andreas", "Mock", email = "mock.science@gmail.com", role = c("aut", "cre"))
 Author: Andreas Mock [aut, cre]
 Maintainer: Andreas Mock <mock.science@gmail.com>
@@ -8,7 +8,8 @@ Description: Shiny app for interactive variant prioritisation in precision oncol
 Depends:
     R (>= 3.4.0),
     tidyverse,
-    plyr
+    plyr,
+    ggplot2
 Imports:
     shiny,
     ConsensusClusterPlus,
