@@ -25,8 +25,9 @@ An increasing number of precision oncology programmes are being launched world-w
 CVE can be installed via Bioconductor 
 
 ```{r,eval=FALSE}
-source('http://www.bioconductor.org/biocLite.R')
-biocLite('CVE')
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install('CVE')
 ```
 
 and once installed loaded by
