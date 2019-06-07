@@ -2,8 +2,8 @@
 title: "Cancer Variant Explorer (CVE) tutorial"
 author:
 - name: Andreas Mock
-  affiliation: University Hospital and National Center for Tumor Diseases (NCT), Heidelberg
-  email: andreas.mock@med.uni-heidelberg.de
+  affiliation: National Center for Tumor Diseases (NCT), Heidelberg
+  email: andreas.mock@nct-heidelberg.de
 package: CVE
 output:
   BiocStyle::html_document:
@@ -76,9 +76,8 @@ The following function retrieves the Oncotator annotation via the Application Pr
 
 ```{r,eval=FALSE}
 library(jsonlite)
-crcCase <- get.oncotator.anno(crcCase_input)
+crcCase <- get.oncotator.anno(crcCase_input[1:100,])
 ```
-
 
 # Opening the Shiny app 
 
