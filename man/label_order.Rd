@@ -8,4 +8,3 @@
 A dataset containing the label order of co-expression modules for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

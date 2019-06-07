@@ -8,4 +8,3 @@
 A dataset containing the survival module signficance scaled for barplot for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

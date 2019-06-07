@@ -23,4 +23,3 @@ openCVE(crcCase,"case study")
 openCVE(melanomaCase,"case study WGCNA",extension="WGCNAmelanoma")
 }
 }
-

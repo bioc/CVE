@@ -8,4 +8,3 @@
 A dataset containing the vemurafenib resistance gene signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

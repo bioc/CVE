@@ -8,4 +8,3 @@
 A dataset containing the module membership for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

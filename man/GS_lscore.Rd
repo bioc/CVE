@@ -8,4 +8,3 @@
 A dataset containing the lymphocyte score gene signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

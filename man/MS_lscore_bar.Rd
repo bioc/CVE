@@ -8,4 +8,3 @@
 A dataset containing the lymphocyte score module signficance scaled for barplot for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

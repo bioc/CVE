@@ -8,4 +8,3 @@
 A dataset containing the module assignment top 5000 most variant genes in TCGA RNAseq data for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

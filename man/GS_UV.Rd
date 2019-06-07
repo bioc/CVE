@@ -8,4 +8,3 @@
 A dataset containing the UV signature gene signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

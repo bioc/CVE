@@ -8,4 +8,3 @@
 A dataset containing the survival gene signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

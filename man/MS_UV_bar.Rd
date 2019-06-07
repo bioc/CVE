@@ -8,4 +8,3 @@
 A dataset containing the UV signature module signficance scaled for barplot for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

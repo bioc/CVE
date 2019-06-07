@@ -8,4 +8,3 @@
 A dataset containing the vemurafenib resistance module signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

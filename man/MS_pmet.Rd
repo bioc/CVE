@@ -8,4 +8,3 @@
 A dataset containing the primary vs metastases module signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

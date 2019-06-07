@@ -8,4 +8,3 @@
 A dataset containing the gene tree of co-expression network for WGCNAmelanoma extension
 }
 \keyword{datasets}
-

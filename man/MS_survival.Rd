@@ -8,4 +8,3 @@
 A dataset containing the survival module signficance for WGCNAmelanoma extension
 }
 \keyword{datasets}
-
